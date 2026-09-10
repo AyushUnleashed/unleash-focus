@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Focus Lock</title>
+    <style>
+      @font-face {
+        font-family: "Archivo";
+        src: url("fonts/archivo.woff2") format("woff2");
+        font-weight: 100 900;
+        font-stretch: 62% 125%;
+      }
+
+      :root {
+        --paper: #e9edf2;
+        --ink: #15213a;
+        --muted: #5b6780;
+        --rule: #cbd3de;
+        --field: #ffffff;
+        --error: #a8261b;
+        --prussian: #12305e;
+        --brass: #e7b541;
+        --steel: #b7c1ce;
+        --steel-dark: #7f8ba0;
+
+        --bg: var(--paper);
+        --fg: var(--ink);
+        --lock-body: var(--steel);
+        --shackle: var(--steel-dark);
+        --keyhole: var(--ink);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #1a2030;
+          --ink: #e6eaf1;
+          --muted: #98a3b8;
+          --rule: #323b50;
+          --field: #232a3c;
+          --error: #ffb4a9;
+          --steel: #5a667c;
+          --steel-dark: #8a96ab;
+          --keyhole: #1a2030;
+        }
+      }
+      /* Locked: the popup floods Prussian blue and the padlock turns brass. */
+      body[data-state="locked"] {
+        --bg: var(--prussian);
+        --fg: #f1f4f8;
+        --muted: #a9b8d3;
+        --rule: #2b4b7e;
+        --field: #1b3b6d;
+        --error: #ffb4a9;
+        --lock-body: var(--brass);
+        --shackle: #d5dce6;
+        --keyhole: var(--prussian);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        width: 320px;
+        margin: 0;
+        padding: 18px 20px 16px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 400 14px/1.45 "Archivo", system-ui, sans-serif;
+        transition: background-color 0.3s ease 0.18s, color 0.3s ease 0.18s;
+      }
+
+      header { text-align: center; }
+
+      /* ---- The padlock is the switch ---- */
+      #lock {
+        display: block;
+        margin: 0 auto;
+        padding: 6px 18px 2px;
+        border: 0;
+        border-radius: 20px;
+        background: none;
+        cursor: pointer;
+      }
+      #lock:disabled { opacity: 0.4; cursor: default; }
+      #lock svg {
+        display: block;
+        width: 92px;
+        height: auto;
+        overflow: visible;
+        transition: transform 0.15s ease;
+      }
+      #lock:not(:disabled):hover svg { transform: translateY(-2px); }
+      #lock:not(:disabled):active svg { transform: translateY(1px) scale(0.98); }
+
+      .shackle path {
+        fill: none;
+        stroke: var(--shackle);
+        stroke-width: 12;
+        transition: stroke 0.2s ease;
+      }
+      .lock-body > rect {
+        fill: var(--lock-body);
+        transition: fill 0.2s ease;
+      }
+      .keyhole { fill: var(--keyhole); }
+
+      .shackle,
+      .lock-body {
+        transform-box: view-box;
+      }
+      /* The shackle pivots on its long left leg, like a real padlock. */
+      .shackle { transform-origin: 38px 72px; }
+
+      /* Unlocking: a latch click, then the shackle springs up and swings open. */
+      body[data-state="open"] .shackle {
+        transform: translateY(-18px) rotate(-20deg);
+        transition: transform 0.42s cubic-bezier(0.3, 1.6, 0.5, 1) 0.1s;
+      }
+      body[data-state="open"] .lock-body > rect { transition-delay: 0.1s; }
+
+      /* Locking: the shackle drops home and the body takes the hit. */
+      body[data-state="locked"] .shackle {
+        transform: none;
+        transition: transform 0.18s cubic-bezier(0.55, 0, 1, 0.45);
+      }
+      body[data-state="locked"] .lock-body > rect { transition-delay: 0.18s; }
+      body.just-locked .lock-body { animation: impact 0.17s cubic-bezier(0.2, 0.8, 0.3, 1) 0.18s; }
+      @keyframes impact {
+        40% { transform: translateY(3px); }
+      }
+
+      /* First paint shows the saved state without replaying the animation. */
+      body.instant,
+      body.instant * {
+        transition: none !important;
+        animation: none !important;
+      }
+
+      h1 {
+        margin: 8px 0 4px;
+        font-size: 46px;
+        line-height: 0.95;
+        font-weight: 900;
+        font-stretch: 125%;
+        letter-spacing: -0.02em;
+      }
+
+      #summary {
+        max-width: 26em;
+        margin: 0 auto;
+        color: var(--muted);
+        text-wrap: balance;
+      }
+
+      /* ---- Site list ---- */
+      #list {
+        list-style: none;
+        margin: 18px 0 0;
+        padding: 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      #list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 40px;
+        border-top: 1px solid var(--rule);
+        font-size: 15px;
+        font-weight: 500;
+      }
+      .remove {
+        width: 28px;
+        height: 28px;
+        border: 0;
+        border-radius: 6px;
+        background: none;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .remove:hover { color: var(--fg); }
+
+      #empty {
+        margin: 18px 0 0;
+        color: var(--muted);
+      }
+
+      form {
+        display: flex;
+        gap: 6px;
+        margin-top: 14px;
+      }
+      input {
+        flex: 1;
+        min-width: 0;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        background: var(--field);
+        color: var(--fg);
+        font: inherit;
+      }
+      input::placeholder { color: var(--muted); }
+      .add {
+        height: 36px;
+        padding: 0 14px;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        background: var(--field);
+        color: var(--fg);
+        font: 600 14px/1 "Archivo", system-ui, sans-serif;
+        cursor: pointer;
+      }
+
+      .link {
+        padding: 2px 0;
+        border: 0;
+        background: none;
+        color: var(--fg);
+        font: inherit;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-color: var(--muted);
+        cursor: pointer;
+      }
+      #addCurrent { margin-top: 8px; }
+
+      #error {
+        margin: 8px 0 0;
+        color: var(--error);
+      }
+      #error:empty { display: none; }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      footer .link { color: var(--muted); font-size: 12px; }
+
+      :focus-visible {
+        outline: 2px solid var(--fg);
+        outline-offset: 3px;
+      }
+      input:focus-visible { outline-offset: 0; }
+
+      @media (prefers-reduced-motion: reduce) {
+        body, body * { transition: none !important; animation: none !important; }
+      }
+    </style>
+  </head>
+  <body class="instant" data-state="open">
+    <header>
+      <button id="lock" aria-pressed="false" aria-label="Lock sites">
+        <svg viewBox="0 0 120 140" aria-hidden="true">
+          <!-- Long left leg stays inside the body when open, like a real padlock. -->
+          <g class="shackle"><path d="M38 100 V46 a22 22 0 0 1 44 0 V72" /></g>
+          <g class="lock-body">
+            <rect x="14" y="62" width="92" height="74" rx="16" />
+            <g class="keyhole">
+              <circle cx="60" cy="92" r="8.5" />
+              <rect x="56.25" y="95" width="7.5" height="19" rx="2.5" />
+            </g>
+          </g>
+        </svg>
+      </button>
+      <h1 id="state">Open</h1>
+      <p id="summary"></p>
+    </header>
+
+    <ul id="list" aria-label="Sites to block"></ul>
+    <p id="empty">Your list is empty. Add a site below.</p>
+
+    <form id="addForm">
+      <input id="siteInput" placeholder="Add a site, like reddit.com" autocomplete="off" aria-label="Site to block" />
+      <button class="add" type="submit">Add</button>
+    </form>
+    <button id="addCurrent" class="link" hidden></button>
+    <p id="error" role="status"></p>
+
+    <footer>
+      <span id="hint"></span>
+      <button id="sound" class="link"></button>
+    </footer>
+
+    <script src="sounds.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
