@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Focus Lock</title>
+    <title>Unleash Focus</title>
     <style>
       @font-face {
         font-family: "Archivo";
@@ -151,11 +151,11 @@
       }
 
       /* ---- Site list ---- */
+      /* No bottom border: the Shorts row below draws the closing rule. */
       #list {
         list-style: none;
         margin: 18px 0 0;
         padding: 0;
-        border-bottom: 1px solid var(--rule);
       }
       #list li {
         display: flex;
@@ -179,10 +179,75 @@
       }
       .remove:hover { color: var(--fg); }
 
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      /* Shown on sites the user hasn't granted access to yet. */
+      .access {
+        padding: 4px 10px;
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        background: none;
+        color: var(--fg);
+        font: 500 12px/1.2 "Archivo", system-ui, sans-serif;
+        cursor: pointer;
+      }
+      .access:hover { border-color: var(--fg); }
+
+      .privacy {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
       #empty {
-        margin: 18px 0 0;
+        margin: 18px 0 12px;
         color: var(--muted);
       }
+
+      /* YouTube Shorts: blocked with the list, but only Shorts, not all of YouTube. */
+      .extra {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 0;
+        border-top: 1px solid var(--rule);
+        border-bottom: 1px solid var(--rule);
+        cursor: pointer;
+      }
+      .extra.is-locked { cursor: default; }
+      .extra-name { font-size: 15px; font-weight: 500; }
+      .extra-note { display: block; color: var(--muted); font-size: 12px; }
+
+      .switch {
+        appearance: none;
+        flex: none;
+        position: relative;
+        width: 36px;
+        height: 20px;
+        margin: 0;
+        border-radius: 999px;
+        background: var(--rule);
+        cursor: inherit;
+        transition: background-color 0.15s ease;
+      }
+      .switch::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--muted);
+        transition: transform 0.15s ease, background-color 0.15s ease;
+      }
+      .switch:checked { background: var(--fg); }
+      .switch:checked::after { transform: translateX(16px); background: var(--bg); }
+      .switch:disabled { opacity: 0.7; }
 
       form {
         display: flex;
@@ -274,6 +339,14 @@
     <ul id="list" aria-label="Sites to block"></ul>
     <p id="empty">Your list is empty. Add a site below.</p>
 
+    <label class="extra" id="shortsRow">
+      <span>
+        <span class="extra-name">YouTube Shorts</span>
+        <span class="extra-note">Blocks Shorts only. The rest of YouTube stays open.</span>
+      </span>
+      <input type="checkbox" class="switch" id="shortsToggle" role="switch" />
+    </label>
+
     <form id="addForm">
       <input id="siteInput" placeholder="Add a site, like reddit.com" autocomplete="off" aria-label="Site to block" />
       <button class="add" type="submit">Add</button>
@@ -285,6 +358,7 @@
       <span id="hint"></span>
       <button id="sound" class="link"></button>
     </footer>
+    <p class="privacy">Your list and settings stay on this device.</p>
 
     <script src="sounds.js"></script>
     <script src="popup.js"></script>

@@ -1,67 +1,91 @@
-const RULE_ID = 1;
+const SITES_RULE_ID = 1;
+const SHORTS_RULE_ID = 2;
 const DEFAULT_SITES = ["x.com", "instagram.com"];
 const BLOCKED_URL = chrome.runtime.getURL("blocked.html");
 
+// Host permission pattern for a listed site; covers the site and its subdomains.
+const originFor = (site) => `*://*.${site}/*`;
+
 async function getState() {
-  const { sites = [], locked = false } = await chrome.storage.local.get(["sites", "locked"]);
-  return { sites, locked };
+  const { sites = [], locked = false, blockShorts = true } = await chrome.storage.local.get([
+    "sites",
+    "locked",
+    "blockShorts",
+  ]);
+  // Access is requested per site from the popup; only sites the user allowed can be blocked.
+  const allowed = await Promise.all(sites.map((site) => chrome.permissions.contains({ origins: [originFor(site)] })));
+  return { sites: sites.filter((_, i) => allowed[i]), locked, blockShorts };
 }
 
-function hostOf(url) {
+// What a URL is blocked as while locked: the site's hostname, "shorts", or null if it's allowed.
+function blockedAs(url, { sites, blockShorts }) {
+  let parsed;
   try {
-    return new URL(url).hostname;
+    parsed = new URL(url);
   } catch {
     return null;
   }
+  if (!parsed.protocol.startsWith("http")) return null;
+  const host = parsed.hostname;
+  if (sites.some((site) => host === site || host.endsWith("." + site))) return host;
+  const onYouTube = host === "youtube.com" || host.endsWith(".youtube.com");
+  if (blockShorts && onYouTube && /^\/shorts(\/|$)/.test(parsed.pathname)) return "shorts";
+  return null;
 }
 
-function matchesSite(host, sites) {
-  return sites.some((site) => host === site || host.endsWith("." + site));
-}
-
-function blockTabIfNeeded(tabId, url, sites) {
-  const host = url && hostOf(url);
-  if (host && matchesSite(host, sites)) {
-    chrome.tabs.update(tabId, { url: `${BLOCKED_URL}#${host}` });
-  }
+function blockTabIfNeeded(tabId, url, state) {
+  const label = url && blockedAs(url, state);
+  if (label) chrome.tabs.update(tabId, { url: `${BLOCKED_URL}#${label}` });
 }
 
 // Rules only catch new navigations, so send tabs that are already open to the blocked page.
-async function blockOpenTabs(sites) {
+async function blockOpenTabs(state) {
   const tabs = await chrome.tabs.query({});
-  for (const tab of tabs) blockTabIfNeeded(tab.id, tab.url, sites);
+  for (const tab of tabs) blockTabIfNeeded(tab.id, tab.url, state);
 }
 
 async function applyState() {
-  const { sites, locked } = await getState();
-  const active = locked && sites.length > 0;
+  const state = await getState();
+  const { sites, locked, blockShorts } = state;
+  const rules = [];
+
+  if (locked && sites.length) {
+    rules.push({
+      id: SITES_RULE_ID,
+      priority: 1,
+      // The capture group carries the hostname to the blocked page, e.g. blocked.html#www.instagram.com
+      action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}#\\1` } },
+      // requestDomains also matches subdomains (m.youtube.com, old.reddit.com, ...)
+      condition: {
+        requestDomains: sites,
+        regexFilter: "^https?://([^/:?#]+)",
+        resourceTypes: ["main_frame", "sub_frame"],
+      },
+    });
+  }
+  if (locked && blockShorts) {
+    rules.push({
+      id: SHORTS_RULE_ID,
+      priority: 1,
+      action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}#shorts` } },
+      condition: {
+        regexFilter: "^https?://([a-z0-9-]+\\.)*youtube\\.com/shorts([/?#]|$)",
+        resourceTypes: ["main_frame"],
+      },
+    });
+  }
 
   await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [RULE_ID],
-    addRules: active
-      ? [
-          {
-            id: RULE_ID,
-            priority: 1,
-            // The capture group carries the hostname to the blocked page, e.g. blocked.html#www.instagram.com
-            action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}#\\1` } },
-            // requestDomains also matches subdomains (m.youtube.com, old.reddit.com, ...)
-            condition: {
-              requestDomains: sites,
-              regexFilter: "^https?://([^/:?#]+)",
-              resourceTypes: ["main_frame", "sub_frame"],
-            },
-          },
-        ]
-      : [],
+    removeRuleIds: [SITES_RULE_ID, SHORTS_RULE_ID],
+    addRules: rules,
   });
 
   // Toolbar icon mirrors the state: grey open padlock, or brass closed padlock on blue.
   const look = locked ? "locked" : "open";
   await chrome.action.setIcon({ path: { 16: `icons/${look}-16.png`, 32: `icons/${look}-32.png` } });
-  await chrome.action.setTitle({ title: locked ? "Focus Lock: locked" : "Focus Lock: open" });
+  await chrome.action.setTitle({ title: locked ? "Unleash Focus: locked" : "Unleash Focus: open" });
 
-  if (active) await blockOpenTabs(sites);
+  if (rules.length) await blockOpenTabs(state);
 }
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
@@ -73,20 +97,25 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
 });
 chrome.runtime.onStartup.addListener(applyState);
 
+// Granting access from the popup (or revoking it in Chrome settings) changes what can be blocked.
+chrome.permissions.onAdded.addListener(applyState);
+chrome.permissions.onRemoved.addListener(applyState);
+
 // Sites with a service worker (x.com) load pages from cache without a network request,
-// so the rule never sees them. Catch those tabs as their URL changes instead.
+// and YouTube opens Shorts without a page load, so the rules never see either.
+// Catch those tabs as their URL changes instead.
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
   if (!changeInfo.url?.startsWith("http")) return;
-  const { sites, locked } = await getState();
-  if (locked) blockTabIfNeeded(tabId, changeInfo.url, sites);
+  const state = await getState();
+  if (state.locked) blockTabIfNeeded(tabId, changeInfo.url, state);
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && (changes.sites || changes.locked)) applyState();
+  if (area === "local" && (changes.sites || changes.locked || changes.blockShorts)) applyState();
 });
 
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== "toggle-lock") return;
-  const { locked } = await getState();
+  const { locked } = await chrome.storage.local.get("locked");
   await chrome.storage.local.set({ locked: !locked });
 });

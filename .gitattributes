@@ -1,0 +1,7 @@
+# Keep the Chrome Web Store zip (scripts/package.sh) to extension files only.
+/store export-ignore
+/scripts export-ignore
+/README.md export-ignore
+/PRIVACY.md export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore

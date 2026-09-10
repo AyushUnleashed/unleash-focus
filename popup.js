@@ -3,6 +3,8 @@ const summaryEl = document.getElementById("summary");
 const lockBtn = document.getElementById("lock");
 const listEl = document.getElementById("list");
 const emptyEl = document.getElementById("empty");
+const shortsRow = document.getElementById("shortsRow");
+const shortsToggle = document.getElementById("shortsToggle");
 const form = document.getElementById("addForm");
 const input = document.getElementById("siteInput");
 const addCurrentBtn = document.getElementById("addCurrent");
@@ -10,11 +12,15 @@ const errorEl = document.getElementById("error");
 const hintEl = document.getElementById("hint");
 const soundBtn = document.getElementById("sound");
 
-let state = { sites: [], locked: false, sound: true };
+let state = { sites: [], locked: false, blockShorts: true, sound: true };
+let allowed = new Set(); // sites the user has granted access to
 let shownLocked = null; // lock state currently on screen; null until first render
 let currentSite = null;
 
 hintEl.textContent = navigator.userAgent.includes("Mac") ? "Shortcut: Option+Shift+L" : "Shortcut: Alt+Shift+L";
+
+// Host permission pattern for a listed site; covers the site and its subdomains.
+const originFor = (site) => `*://*.${site}/*`;
 
 // "https://www.YouTube.com/watch?v=1" -> "youtube.com"
 function normalize(raw) {
@@ -29,17 +35,45 @@ function normalize(raw) {
   }
 }
 
-// ["x.com"] -> "x.com", ["x.com", "instagram.com"] -> "x.com and instagram.com", 3+ -> "3 sites"
-function nameSites(sites) {
-  return sites.length <= 2 ? sites.join(" and ") : `${sites.length} sites`;
+// ["a", "b", "c"] -> "a, b and c"
+function joinNames(names) {
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0];
 }
 
-function describe({ sites, locked }) {
-  if (locked) {
-    const one = sites.length === 1;
-    return `${nameSites(sites)} ${one ? "is" : "are"} blocked. Click the lock to open ${one ? "it" : "them"}.`;
-  }
-  return sites.length ? `Click the lock to block ${nameSites(sites)}.` : "Add a site below, then click the lock.";
+// -> "x.com and instagram.com", "x.com, instagram.com and YouTube Shorts", "5 sites and YouTube Shorts"
+function nameBlocked({ sites, blockShorts }) {
+  const names = sites.length <= 2 ? [...sites] : [`${sites.length} sites`];
+  if (blockShorts) names.push("YouTube Shorts");
+  return joinNames(names);
+}
+
+function describe(s) {
+  const count = s.sites.length + (s.blockShorts ? 1 : 0);
+  if (!count) return "Add a site below, then click the lock.";
+  if (!s.locked) return `Click the lock to block ${nameBlocked(s)}.`;
+  const one = count === 1 && !s.blockShorts;
+  const text = `${nameBlocked(s)} ${one ? "is" : "are"} blocked. Click the lock to open ${one ? "it" : "them"}.`;
+  const waiting = s.sites.filter((site) => !allowed.has(site));
+  if (!waiting.length) return text;
+  return `${text} ${joinNames(waiting)} ${waiting.length === 1 ? "needs" : "need"} access first.`;
+}
+
+async function refreshAllowed() {
+  const checks = await Promise.all(
+    state.sites.map((site) => chrome.permissions.contains({ origins: [originFor(site)] }))
+  );
+  allowed = new Set(state.sites.filter((_, i) => checks[i]));
+}
+
+async function refreshAndRender() {
+  await refreshAllowed();
+  render();
+}
+
+// Call straight from a click: Chrome only shows the permission prompt for a user gesture.
+function requestAccess(sites) {
+  if (!sites.length) return;
+  chrome.permissions.request({ origins: sites.map(originFor) }).then(refreshAndRender, () => {});
 }
 
 function animateLock(locked) {
@@ -51,8 +85,37 @@ function animateLock(locked) {
   if (state.sound) LockSounds.play(locked ? "lock" : "unlock");
 }
 
+function siteRow(site, locked) {
+  const li = document.createElement("li");
+  const name = document.createElement("span");
+  name.textContent = site;
+  const actions = document.createElement("span");
+  actions.className = "actions";
+
+  if (!allowed.has(site)) {
+    const access = document.createElement("button");
+    access.className = "access";
+    access.textContent = "Allow access";
+    access.title = `Let Unleash Focus block ${site}`;
+    access.addEventListener("click", () => requestAccess([site]));
+    actions.append(access);
+  }
+  // No removing sites mid-focus; unlock first.
+  if (!locked) {
+    const remove = document.createElement("button");
+    remove.className = "remove";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", `Remove ${site}`);
+    remove.addEventListener("click", () => removeSite(site));
+    actions.append(remove);
+  }
+
+  li.append(name, actions);
+  return li;
+}
+
 function render() {
-  const { sites, locked, sound } = state;
+  const { sites, locked, blockShorts, sound } = state;
 
   if (shownLocked !== null && shownLocked !== locked) animateLock(locked);
   shownLocked = locked;
@@ -63,28 +126,17 @@ function render() {
 
   lockBtn.setAttribute("aria-pressed", String(locked));
   lockBtn.setAttribute("aria-label", locked ? "Unlock sites" : "Lock sites");
-  lockBtn.disabled = !locked && sites.length === 0;
+  lockBtn.disabled = !locked && sites.length === 0 && !blockShorts;
 
-  listEl.replaceChildren(
-    ...sites.map((site) => {
-      const li = document.createElement("li");
-      const name = document.createElement("span");
-      name.textContent = site;
-      li.append(name);
-      // No removing sites mid-focus; unlock first.
-      if (!locked) {
-        const remove = document.createElement("button");
-        remove.className = "remove";
-        remove.textContent = "×";
-        remove.setAttribute("aria-label", `Remove ${site}`);
-        remove.addEventListener("click", () => save({ sites: state.sites.filter((s) => s !== site) }));
-        li.append(remove);
-      }
-      return li;
-    })
-  );
+  listEl.replaceChildren(...sites.map((site) => siteRow(site, locked)));
   listEl.hidden = sites.length === 0;
   emptyEl.hidden = sites.length > 0;
+
+  // Same rule as the list: no switching Shorts off mid-focus.
+  shortsToggle.checked = blockShorts;
+  shortsToggle.disabled = locked;
+  shortsRow.classList.toggle("is-locked", locked);
+  shortsRow.title = locked ? "Unlock to change" : "";
 
   const canAddCurrent = currentSite && !sites.includes(currentSite);
   addCurrentBtn.hidden = !canAddCurrent;
@@ -103,11 +155,23 @@ function addSite(raw) {
   const site = normalize(raw);
   if (!site) return "Enter a web address, like reddit.com.";
   if (state.sites.includes(site)) return `${site} is already on your list.`;
+  requestAccess([site]);
   save({ sites: [...state.sites, site] });
   return "";
 }
 
-lockBtn.addEventListener("click", () => save({ locked: !state.locked }));
+function removeSite(site) {
+  save({ sites: state.sites.filter((s) => s !== site) });
+  // Give back access the extension no longer needs.
+  chrome.permissions.remove({ origins: [originFor(site)] }).catch(() => {});
+}
+
+lockBtn.addEventListener("click", () => {
+  const locking = !state.locked;
+  if (locking) requestAccess(state.sites.filter((site) => !allowed.has(site)));
+  save({ locked: locking });
+});
+shortsToggle.addEventListener("change", () => save({ blockShorts: shortsToggle.checked }));
 soundBtn.addEventListener("click", () => save({ sound: !state.sound }));
 
 form.addEventListener("submit", (e) => {
@@ -126,21 +190,26 @@ addCurrentBtn.addEventListener("click", () => {
 });
 
 Promise.all([
-  chrome.storage.local.get(["sites", "locked", "sound"]),
+  chrome.storage.local.get(["sites", "locked", "blockShorts", "sound"]),
   chrome.tabs.query({ active: true, currentWindow: true }),
-]).then(([{ sites = [], locked = false, sound = true }, [tab]]) => {
-  state = { sites, locked, sound };
+]).then(async ([{ sites = [], locked = false, blockShorts = true, sound = true }, [tab]]) => {
+  state = { sites, locked, blockShorts, sound };
+  // activeTab exposes the current tab's URL while the popup is open.
   if (tab?.url?.startsWith("http")) currentSite = normalize(tab.url);
-  render();
+  await refreshAndRender();
   // Re-enable transitions once the saved state has painted.
   requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("instant")));
 });
+
+chrome.permissions.onAdded.addListener(refreshAndRender);
+chrome.permissions.onRemoved.addListener(refreshAndRender);
 
 // Keep the popup in sync if the keyboard shortcut toggles while it's open.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.sites) state.sites = changes.sites.newValue ?? [];
   if (changes.locked) state.locked = changes.locked.newValue ?? false;
+  if (changes.blockShorts) state.blockShorts = changes.blockShorts.newValue ?? true;
   if (changes.sound) state.sound = changes.sound.newValue ?? true;
-  render();
+  refreshAndRender();
 });

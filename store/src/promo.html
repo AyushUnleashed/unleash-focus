@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Unleash Focus promo tiles</title>
+    <style>
+      @font-face {
+        font-family: "Archivo";
+        src: url("../../fonts/archivo.woff2") format("woff2");
+        font-weight: 100 900;
+        font-stretch: 62% 125%;
+      }
+
+      :root {
+        --prussian: #12305e;
+        --deep: #0a1f42;
+        --brass: #e7b541;
+        --steel: #d5dce6;
+        --mist: #b4c2da;
+      }
+
+      html, body { margin: 0; }
+      body { font-family: "Archivo", system-ui, sans-serif; overflow: hidden; }
+
+      .tile {
+        display: none;
+        position: relative;
+        overflow: hidden;
+        background: radial-gradient(120% 140% at 70% 40%, var(--prussian) 0%, var(--deep) 100%);
+        color: #f1f4f8;
+      }
+      .tile.on { display: block; }
+
+      /* Rings behind the lock: the "clunk" of it shutting. */
+      .rings { position: absolute; }
+      .rings circle { fill: none; stroke: var(--brass); }
+
+      .lock { position: absolute; }
+      .lock path { fill: none; stroke: var(--steel); stroke-width: 12; }
+      .lock .body { fill: var(--brass); }
+      .lock .keyhole { fill: var(--deep); }
+
+      /* Small tile, drawn at 2x (880x560) and downscaled to 440x280. No text, per store guidance. */
+      .small { width: 880px; height: 560px; }
+      .small .rings { width: 760px; left: 60px; top: -100px; }
+      .small .lock { width: 300px; left: 290px; top: 110px; }
+
+      /* Marquee 1400x560: wordmark left, lock right. */
+      .marquee { width: 1400px; height: 560px; }
+      .marquee .rings { width: 760px; right: -40px; top: -100px; }
+      .marquee .lock { width: 280px; right: 200px; top: 120px; }
+      .marquee .words {
+        position: absolute;
+        left: 110px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .marquee h1 {
+        margin: 0 0 18px;
+        font-size: 92px;
+        line-height: 0.95;
+        font-weight: 900;
+        font-stretch: 125%;
+        letter-spacing: -0.025em;
+      }
+      .marquee p {
+        margin: 0;
+        font-size: 30px;
+        font-stretch: 105%;
+        color: var(--mist);
+      }
+    </style>
+  </head>
+  <body>
+    <template id="art">
+      <svg class="rings" viewBox="0 0 400 400" aria-hidden="true">
+        <circle cx="200" cy="200" r="96" stroke-width="3" stroke-opacity="0.35" />
+        <circle cx="200" cy="200" r="136" stroke-width="3" stroke-opacity="0.18" />
+        <circle cx="200" cy="200" r="176" stroke-width="3" stroke-opacity="0.08" />
+      </svg>
+      <svg class="lock" viewBox="0 0 120 140" aria-hidden="true">
+        <path d="M38 100 V46 a22 22 0 0 1 44 0 V72" />
+        <rect class="body" x="14" y="62" width="92" height="74" rx="16" />
+        <g class="keyhole">
+          <circle cx="60" cy="92" r="8.5" />
+          <rect x="56.25" y="95" width="7.5" height="19" rx="2.5" />
+        </g>
+      </svg>
+    </template>
+
+    <div class="tile small" data-kind="small"></div>
+    <div class="tile marquee" data-kind="marquee">
+      <div class="words">
+        <h1>Unleash<br />Focus</h1>
+        <p>Lock distractions in one click.</p>
+      </div>
+    </div>
+
+    <script>
+      const kind = new URLSearchParams(location.search).get("kind") || "small";
+      const tile = document.querySelector(`[data-kind="${kind}"]`);
+      tile.prepend(document.getElementById("art").content.cloneNode(true));
+      tile.classList.add("on");
+    </script>
+  </body>
+</html>
