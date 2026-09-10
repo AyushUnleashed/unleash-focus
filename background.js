@@ -3,13 +3,18 @@ const SHORTS_RULE_ID = 2;
 const DEFAULT_SITES = ["x.com", "instagram.com"];
 const BLOCKED_URL = chrome.runtime.getURL("blocked.html");
 
+// Host permission pattern for a listed site; covers the site and its subdomains.
+const originFor = (site) => `*://*.${site}/*`;
+
 async function getState() {
   const { sites = [], locked = false, blockShorts = true } = await chrome.storage.local.get([
     "sites",
     "locked",
     "blockShorts",
   ]);
-  return { sites, locked, blockShorts };
+  // Access is requested per site from the popup; only sites the user allowed can be blocked.
+  const allowed = await Promise.all(sites.map((site) => chrome.permissions.contains({ origins: [originFor(site)] })));
+  return { sites: sites.filter((_, i) => allowed[i]), locked, blockShorts };
 }
 
 // What a URL is blocked as while locked: the site's hostname, "shorts", or null if it's allowed.
@@ -78,7 +83,7 @@ async function applyState() {
   // Toolbar icon mirrors the state: grey open padlock, or brass closed padlock on blue.
   const look = locked ? "locked" : "open";
   await chrome.action.setIcon({ path: { 16: `icons/${look}-16.png`, 32: `icons/${look}-32.png` } });
-  await chrome.action.setTitle({ title: locked ? "Focus Lock: locked" : "Focus Lock: open" });
+  await chrome.action.setTitle({ title: locked ? "Unleash Focus: locked" : "Unleash Focus: open" });
 
   if (rules.length) await blockOpenTabs(state);
 }
@@ -91,6 +96,10 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   await applyState();
 });
 chrome.runtime.onStartup.addListener(applyState);
+
+// Granting access from the popup (or revoking it in Chrome settings) changes what can be blocked.
+chrome.permissions.onAdded.addListener(applyState);
+chrome.permissions.onRemoved.addListener(applyState);
 
 // Sites with a service worker (x.com) load pages from cache without a network request,
 // and YouTube opens Shorts without a page load, so the rules never see either.
@@ -107,6 +116,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== "toggle-lock") return;
-  const { locked } = await getState();
+  const { locked } = await chrome.storage.local.get("locked");
   await chrome.storage.local.set({ locked: !locked });
 });

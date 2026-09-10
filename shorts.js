@@ -2,7 +2,7 @@
 const state = { locked: false, blockShorts: true };
 
 function apply() {
-  document.documentElement.toggleAttribute("data-focus-lock-shorts", state.locked && state.blockShorts);
+  document.documentElement.toggleAttribute("data-unleash-focus-shorts", state.locked && state.blockShorts);
 }
 
 chrome.storage.local.get(["locked", "blockShorts"]).then(({ locked = false, blockShorts = true }) => {

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Unleash Focus store screenshots</title>
+    <style>
+      @font-face {
+        font-family: "Archivo";
+        src: url("../../fonts/archivo.woff2") format("woff2");
+        font-weight: 100 900;
+        font-stretch: 62% 125%;
+      }
+
+      :root {
+        --prussian: #12305e;
+        --deep: #0a1f42;
+        --brass: #e7b541;
+        --paper: #e9edf2;
+        --ink: #15213a;
+        --mist: #b4c2da;
+        --slate: #5b6780;
+      }
+
+      html, body { margin: 0; }
+      body {
+        width: 1280px;
+        height: 800px;
+        overflow: hidden;
+        font-family: "Archivo", system-ui, sans-serif;
+      }
+
+      /* One scene per screenshot; render.sh picks it with ?n= */
+      .scene {
+        display: none;
+        box-sizing: border-box;
+        width: 1280px;
+        height: 800px;
+        padding-inline: 88px;
+        align-items: center;
+        gap: 64px;
+      }
+      .scene.on { display: flex; }
+
+      .dark { background: var(--prussian); color: #f1f4f8; }
+      .deep { background: var(--deep); color: #f1f4f8; }
+      .light { background: var(--paper); color: var(--ink); }
+
+      .copy { flex: 0 0 440px; }
+      h1 {
+        margin: 0 0 22px;
+        font-size: 54px;
+        line-height: 1;
+        font-weight: 900;
+        font-stretch: 112%;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+      }
+      p {
+        margin: 0;
+        max-width: 21em;
+        font-size: 21px;
+        line-height: 1.5;
+      }
+      .dark p, .deep p { color: var(--mist); }
+      .light p { color: var(--slate); }
+
+      .stage {
+        position: relative;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        height: 100%;
+      }
+
+      .popup {
+        display: block;
+        width: 350px;
+        border-radius: 14px;
+        box-shadow: 0 34px 70px -24px rgba(3, 10, 26, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.07);
+      }
+      .light .popup { box-shadow: 0 34px 70px -28px rgba(21, 33, 58, 0.38), 0 0 0 1px rgba(21, 33, 58, 0.08); }
+
+      /* Scene 2: open and locked side by side, locked one set lower. */
+      .pair .popup { width: 300px; }
+      .pair .popup + .popup { margin-top: 90px; }
+
+      /* Scene 4: the Shorts locked page behind the popup. */
+      .page {
+        position: absolute;
+        right: -24px;
+        top: 150px;
+        width: 520px;
+        border-radius: 12px;
+        box-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+      .with-page .popup { position: relative; margin-right: 260px; }
+    </style>
+  </head>
+  <body>
+    <section class="scene dark" data-n="1">
+      <div class="copy">
+        <h1>Lock distractions in one click.</h1>
+        <p>Put the sites that pull you away on one list. Click the padlock and they stay blocked until you unlock.</p>
+      </div>
+      <div class="stage"><img class="popup" src="shots/popup-locked.png" alt="" /></div>
+    </section>
+
+    <section class="scene light" data-n="2">
+      <div class="copy">
+        <h1>Open or locked, you always know.</h1>
+        <p>The shackle snaps shut with a clunk and the lock turns brass. The toolbar icon changes with it.</p>
+      </div>
+      <div class="stage pair">
+        <img class="popup" src="shots/popup-open.png" alt="" />
+        <img class="popup" src="shots/popup-locked.png" alt="" />
+      </div>
+    </section>
+
+    <section class="scene deep" data-n="4">
+      <div class="copy">
+        <h1>Block Shorts. Keep YouTube.</h1>
+        <p>Tutorials and long videos stay open. Shorts shelves disappear and Shorts links lock.</p>
+      </div>
+      <div class="stage with-page">
+        <img class="page" src="shots/blocked-shorts.png" alt="" />
+        <img class="popup" src="shots/popup-open.png" alt="" />
+      </div>
+    </section>
+
+    <section class="scene light" data-n="5">
+      <div class="copy">
+        <h1>Your list never leaves this device.</h1>
+        <p>No account, no tracking, no servers. Chrome asks for access one site at a time, only when you add it.</p>
+      </div>
+      <div class="stage"><img class="popup" src="shots/popup-access.png" alt="" /></div>
+    </section>
+
+    <script>
+      const n = new URLSearchParams(location.search).get("n") || "1";
+      document.querySelector(`[data-n="${n}"]`).classList.add("on");
+    </script>
+  </body>
+</html>

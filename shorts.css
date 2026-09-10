@@ -1,6 +1,6 @@
-/* Hides Shorts on YouTube while Focus Lock is locked with YouTube Shorts on.
+/* Hides Shorts on YouTube while Unleash Focus is locked with YouTube Shorts on.
    shorts.js sets the attribute; the rest of YouTube is untouched. */
-html[data-focus-lock-shorts]
+html[data-unleash-focus-shorts]
   :is(
     /* home feed shelf */
     ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
