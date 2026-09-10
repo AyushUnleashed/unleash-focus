@@ -2,7 +2,11 @@ const MIN_SIZE = 28;
 const heading = document.getElementById("site");
 const host = decodeURIComponent(location.hash.slice(1)).replace(/^www\./, "");
 
-if (host) {
+if (host === "shorts") {
+  heading.textContent = "YouTube Shorts";
+  document.querySelector(".lead").textContent = "are locked while you focus. The rest of YouTube is open.";
+  document.title = "YouTube Shorts are locked";
+} else if (host) {
   heading.textContent = host;
   document.title = `${host} is locked`;
 }

@@ -1,0 +1,24 @@
+/* Hides Shorts on YouTube while Focus Lock is locked with YouTube Shorts on.
+   shorts.js sets the attribute; the rest of YouTube is untouched. */
+html[data-focus-lock-shorts]
+  :is(
+    /* home feed shelf */
+    ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+    ytd-rich-shelf-renderer[is-shorts],
+    ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model),
+    /* channel and watch-page shelves */
+    ytd-reel-shelf-renderer,
+    /* search results */
+    grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
+    ytd-video-renderer:has(a[href^="/shorts/"]),
+    /* navigation */
+    ytd-guide-entry-renderer:has(a[title="Shorts"]),
+    ytd-mini-guide-entry-renderer[aria-label="Shorts"],
+    yt-tab-shape[tab-title="Shorts"],
+    /* m.youtube.com */
+    ytm-reel-shelf-renderer,
+    ytm-shorts-lockup-view-model,
+    ytm-pivot-bar-item-renderer:has(.pivot-shorts)
+  ) {
+  display: none !important;
+}

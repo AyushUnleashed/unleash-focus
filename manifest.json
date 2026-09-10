@@ -1,13 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Focus Lock",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Lock and unlock a list of distracting sites with one button.",
   "permissions": ["declarativeNetRequest", "storage"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "css": ["shorts.css"],
+      "js": ["shorts.js"],
+      "run_at": "document_start"
+    }
+  ],
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

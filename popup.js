@@ -3,6 +3,8 @@ const summaryEl = document.getElementById("summary");
 const lockBtn = document.getElementById("lock");
 const listEl = document.getElementById("list");
 const emptyEl = document.getElementById("empty");
+const shortsRow = document.getElementById("shortsRow");
+const shortsToggle = document.getElementById("shortsToggle");
 const form = document.getElementById("addForm");
 const input = document.getElementById("siteInput");
 const addCurrentBtn = document.getElementById("addCurrent");
@@ -10,7 +12,7 @@ const errorEl = document.getElementById("error");
 const hintEl = document.getElementById("hint");
 const soundBtn = document.getElementById("sound");
 
-let state = { sites: [], locked: false, sound: true };
+let state = { sites: [], locked: false, blockShorts: true, sound: true };
 let shownLocked = null; // lock state currently on screen; null until first render
 let currentSite = null;
 
@@ -29,17 +31,21 @@ function normalize(raw) {
   }
 }
 
-// ["x.com"] -> "x.com", ["x.com", "instagram.com"] -> "x.com and instagram.com", 3+ -> "3 sites"
-function nameSites(sites) {
-  return sites.length <= 2 ? sites.join(" and ") : `${sites.length} sites`;
+// -> "x.com and instagram.com", "x.com, instagram.com and YouTube Shorts", "5 sites and YouTube Shorts"
+function nameBlocked({ sites, blockShorts }) {
+  const names = sites.length <= 2 ? [...sites] : [`${sites.length} sites`];
+  if (blockShorts) names.push("YouTube Shorts");
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0];
 }
 
-function describe({ sites, locked }) {
-  if (locked) {
-    const one = sites.length === 1;
-    return `${nameSites(sites)} ${one ? "is" : "are"} blocked. Click the lock to open ${one ? "it" : "them"}.`;
+function describe(s) {
+  const count = s.sites.length + (s.blockShorts ? 1 : 0);
+  if (!count) return "Add a site below, then click the lock.";
+  if (s.locked) {
+    const one = count === 1 && !s.blockShorts;
+    return `${nameBlocked(s)} ${one ? "is" : "are"} blocked. Click the lock to open ${one ? "it" : "them"}.`;
   }
-  return sites.length ? `Click the lock to block ${nameSites(sites)}.` : "Add a site below, then click the lock.";
+  return `Click the lock to block ${nameBlocked(s)}.`;
 }
 
 function animateLock(locked) {
@@ -52,7 +58,7 @@ function animateLock(locked) {
 }
 
 function render() {
-  const { sites, locked, sound } = state;
+  const { sites, locked, blockShorts, sound } = state;
 
   if (shownLocked !== null && shownLocked !== locked) animateLock(locked);
   shownLocked = locked;
@@ -63,7 +69,7 @@ function render() {
 
   lockBtn.setAttribute("aria-pressed", String(locked));
   lockBtn.setAttribute("aria-label", locked ? "Unlock sites" : "Lock sites");
-  lockBtn.disabled = !locked && sites.length === 0;
+  lockBtn.disabled = !locked && sites.length === 0 && !blockShorts;
 
   listEl.replaceChildren(
     ...sites.map((site) => {
@@ -85,6 +91,12 @@ function render() {
   );
   listEl.hidden = sites.length === 0;
   emptyEl.hidden = sites.length > 0;
+
+  // Same rule as the list: no switching Shorts off mid-focus.
+  shortsToggle.checked = blockShorts;
+  shortsToggle.disabled = locked;
+  shortsRow.classList.toggle("is-locked", locked);
+  shortsRow.title = locked ? "Unlock to change" : "";
 
   const canAddCurrent = currentSite && !sites.includes(currentSite);
   addCurrentBtn.hidden = !canAddCurrent;
@@ -108,6 +120,7 @@ function addSite(raw) {
 }
 
 lockBtn.addEventListener("click", () => save({ locked: !state.locked }));
+shortsToggle.addEventListener("change", () => save({ blockShorts: shortsToggle.checked }));
 soundBtn.addEventListener("click", () => save({ sound: !state.sound }));
 
 form.addEventListener("submit", (e) => {
@@ -126,10 +139,10 @@ addCurrentBtn.addEventListener("click", () => {
 });
 
 Promise.all([
-  chrome.storage.local.get(["sites", "locked", "sound"]),
+  chrome.storage.local.get(["sites", "locked", "blockShorts", "sound"]),
   chrome.tabs.query({ active: true, currentWindow: true }),
-]).then(([{ sites = [], locked = false, sound = true }, [tab]]) => {
-  state = { sites, locked, sound };
+]).then(([{ sites = [], locked = false, blockShorts = true, sound = true }, [tab]]) => {
+  state = { sites, locked, blockShorts, sound };
   if (tab?.url?.startsWith("http")) currentSite = normalize(tab.url);
   render();
   // Re-enable transitions once the saved state has painted.
@@ -141,6 +154,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.sites) state.sites = changes.sites.newValue ?? [];
   if (changes.locked) state.locked = changes.locked.newValue ?? false;
+  if (changes.blockShorts) state.blockShorts = changes.blockShorts.newValue ?? true;
   if (changes.sound) state.sound = changes.sound.newValue ?? true;
   render();
 });

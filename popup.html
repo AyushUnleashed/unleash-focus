@@ -151,11 +151,11 @@
       }
 
       /* ---- Site list ---- */
+      /* No bottom border: the Shorts row below draws the closing rule. */
       #list {
         list-style: none;
         margin: 18px 0 0;
         padding: 0;
-        border-bottom: 1px solid var(--rule);
       }
       #list li {
         display: flex;
@@ -180,9 +180,51 @@
       .remove:hover { color: var(--fg); }
 
       #empty {
-        margin: 18px 0 0;
+        margin: 18px 0 12px;
         color: var(--muted);
       }
+
+      /* YouTube Shorts: blocked with the list, but only Shorts, not all of YouTube. */
+      .extra {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 0;
+        border-top: 1px solid var(--rule);
+        border-bottom: 1px solid var(--rule);
+        cursor: pointer;
+      }
+      .extra.is-locked { cursor: default; }
+      .extra-name { font-size: 15px; font-weight: 500; }
+      .extra-note { display: block; color: var(--muted); font-size: 12px; }
+
+      .switch {
+        appearance: none;
+        flex: none;
+        position: relative;
+        width: 36px;
+        height: 20px;
+        margin: 0;
+        border-radius: 999px;
+        background: var(--rule);
+        cursor: inherit;
+        transition: background-color 0.15s ease;
+      }
+      .switch::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--muted);
+        transition: transform 0.15s ease, background-color 0.15s ease;
+      }
+      .switch:checked { background: var(--fg); }
+      .switch:checked::after { transform: translateX(16px); background: var(--bg); }
+      .switch:disabled { opacity: 0.7; }
 
       form {
         display: flex;
@@ -273,6 +315,14 @@
 
     <ul id="list" aria-label="Sites to block"></ul>
     <p id="empty">Your list is empty. Add a site below.</p>
+
+    <label class="extra" id="shortsRow">
+      <span>
+        <span class="extra-name">YouTube Shorts</span>
+        <span class="extra-note">Blocks Shorts only. The rest of YouTube stays open.</span>
+      </span>
+      <input type="checkbox" class="switch" id="shortsToggle" role="switch" />
+    </label>
 
     <form id="addForm">
       <input id="siteInput" placeholder="Add a site, like reddit.com" autocomplete="off" aria-label="Site to block" />

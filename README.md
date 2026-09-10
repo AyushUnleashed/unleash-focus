@@ -20,6 +20,15 @@ After changing the code, click the reload arrow on the extension's card.
 - While locked you can add sites but not remove them — unlock first.
 - "Mute sound" in the popup footer turns the lock sounds off.
 
+## YouTube Shorts
+
+The **YouTube Shorts** switch (on by default) blocks Shorts without blocking YouTube, so tutorials and long videos stay available. While locked:
+
+- `youtube.com/shorts/…` redirects to the locked page, including Shorts opened from inside YouTube.
+- `shorts.css` hides Shorts shelves on home, search, channel and watch pages, the channel Shorts tab, and the Shorts sidebar entry.
+
+Like the site list, the switch can't be turned off while locked. YouTube renames its elements from time to time; if Shorts shelves reappear, the selectors in `shorts.css` need updating.
+
 ## How blocking works
 
 - A `declarativeNetRequest` rule redirects requests to listed domains to `blocked.html`.
