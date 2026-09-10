@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+._*
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Extension packaging — never commit the signing key
+*.pem
+*.crx
+*.zip
+
+# Dependencies and logs, if tooling is added later
+node_modules/
+*.log
