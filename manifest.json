@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Focus Lock",
+  "version": "1.0.0",
+  "description": "Lock and unlock a list of distracting sites with one button.",
+  "permissions": ["declarativeNetRequest", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Focus Lock",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/open-16.png",
+      "32": "icons/open-32.png"
+    }
+  },
+  "commands": {
+    "toggle-lock": {
+      "suggested_key": { "default": "Alt+Shift+L" },
+      "description": "Lock / unlock sites"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
