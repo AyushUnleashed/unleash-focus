@@ -38,4 +38,4 @@ Uninstalling the extension deletes everything it stored. You can also remove any
 
 ## Changes and contact
 
-If this policy changes, the new version will be published at this same address with a new effective date. For questions, use the contact email on the Unleash Focus Chrome Web Store listing.
+If this policy changes, the new version will be published at this same address with a new effective date. For questions, open an issue at https://github.com/AyushUnleashed/unleash-focus/issues. The source code is public in the same repository, so you can check exactly what the extension does.

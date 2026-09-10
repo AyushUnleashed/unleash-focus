@@ -34,6 +34,7 @@ Privacy
 • No account, no tracking, no ads, no servers.
 • Your list and settings are stored only on your device.
 • Chrome asks for access one site at a time, only for sites you add.
+• Open source: github.com/AyushUnleashed/unleash-focus
 
 Tip: to block sites in incognito windows too, open the extension's details in chrome://extensions and turn on "Allow in Incognito".
 ```
@@ -55,7 +56,10 @@ Tip: to block sites in incognito windows too, open the extension's details in ch
 | Small promo tile (440×280) | `promo-small-440x280.png` |
 | Marquee promo tile (1400×560, optional) | `promo-marquee-1400x560.png` |
 
-**Additional fields:** Mature content: No. Homepage and support URLs: optional; add the GitHub repo if it's made public.
+**Additional fields:**
+- Mature content: No.
+- Homepage URL: https://github.com/AyushUnleashed/unleash-focus
+- Support URL: https://github.com/AyushUnleashed/unleash-focus/issues
 
 ## Privacy practices tab
 
@@ -81,7 +85,7 @@ Unleash Focus blocks a list of websites the user chooses, and optionally YouTube
 - I do not use or transfer user data for purposes that are unrelated to my item's single purpose.
 - I do not use or transfer user data to determine creditworthiness or for lending purposes.
 
-**Privacy policy URL:** _pending — the public URL where PRIVACY.md is hosted._
+**Privacy policy URL:** https://github.com/AyushUnleashed/unleash-focus/blob/main/PRIVACY.md
 
 ## Test instructions tab
 
