@@ -24,7 +24,7 @@ Features
 • One-click lock and unlock for your whole list.
 • The padlock snaps shut with a satisfying clunk, and the toolbar icon shows at a glance whether you're locked.
 • Blocks whole sites, including subdomains like m.facebook.com or old.reddit.com.
-• Tabs already open on a blocked site switch to the locked page the moment you lock.
+• Tabs already open on a blocked site switch to the locked page when you lock, and go back to where they were when you unlock.
 • YouTube Shorts switch: blocks Shorts and hides Shorts shelves while the rest of YouTube stays open for tutorials and long videos.
 • No sneaking out mid-focus: sites can't be removed and Shorts can't be switched off while locked.
 • Keyboard shortcut: Alt+Shift+L (Option+Shift+L on Mac).
