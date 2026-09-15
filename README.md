@@ -35,7 +35,7 @@ Like the site list, the switch can't be turned off while locked. YouTube renames
 - Permissions are minimal: `declarativeNetRequestWithHostAccess` (no install warning), `storage`, `activeTab`, fixed access to youtube.com, and optional access to other sites requested one site at a time.
 - A `declarativeNetRequest` rule redirects requests to listed (and allowed) domains to `blocked.html`.
 - Sites with a service worker (e.g. x.com) can load from cache without a network request, so `background.js` also watches tab URLs and redirects any tab that lands on a listed site.
-- Locking also redirects tabs that are already open on listed sites.
+- Locking also redirects tabs that are already open on listed sites; unlocking sends them back to the page they were on.
 
 Everything is stored locally in `chrome.storage`; nothing is sent anywhere. See [PRIVACY.md](PRIVACY.md). Sounds are synthesized with Web Audio (`sounds.js`). The Archivo font is bundled under the SIL Open Font License (`fonts/OFL.txt`).
 
