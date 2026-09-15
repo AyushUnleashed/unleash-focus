@@ -2,6 +2,8 @@ const SITES_RULE_ID = 1;
 const SHORTS_RULE_ID = 2;
 const DEFAULT_SITES = ["x.com", "instagram.com"];
 const BLOCKED_URL = chrome.runtime.getURL("blocked.html");
+// Long enough for the popup's padlock animation and sound (popup.html, sounds.js) to finish.
+const ANIMATION_MS = 700;
 
 // Host permission pattern for a listed site; covers the site and its subdomains.
 const originFor = (site) => `*://*.${site}/*`;
@@ -33,13 +35,17 @@ function blockedAs(url, { sites, blockShorts }) {
   return null;
 }
 
+// The blocked page names the site from the query and goes back to the URL in the hash on unlock.
 function blockTabIfNeeded(tabId, url, state) {
   const label = url && blockedAs(url, state);
-  if (label) chrome.tabs.update(tabId, { url: `${BLOCKED_URL}#${label}` });
+  if (label) chrome.tabs.update(tabId, { url: `${BLOCKED_URL}?${label}#${url}` });
 }
 
 // Rules only catch new navigations, so send tabs that are already open to the blocked page.
-async function blockOpenTabs(state) {
+// Runs on a delay, so read the state again: the lock may have been opened since.
+async function blockOpenTabs() {
+  const state = await getState();
+  if (!state.locked) return;
   const tabs = await chrome.tabs.query({});
   for (const tab of tabs) blockTabIfNeeded(tab.id, tab.url, state);
 }
@@ -53,12 +59,13 @@ async function applyState() {
     rules.push({
       id: SITES_RULE_ID,
       priority: 1,
-      // The capture group carries the hostname to the blocked page, e.g. blocked.html#www.instagram.com
-      action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}#\\1` } },
+      // \1 is the hostname, \0 the whole URL: blocked.html?www.instagram.com#https://www.instagram.com/reels/abc
+      // (Chrome replaces only the matched part of the URL, so the regex has to match all of it.)
+      action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}?\\1#\\0` } },
       // requestDomains also matches subdomains (m.youtube.com, old.reddit.com, ...)
       condition: {
         requestDomains: sites,
-        regexFilter: "^https?://([^/:?#]+)",
+        regexFilter: "^https?://([^/:?#]+).*",
         resourceTypes: ["main_frame", "sub_frame"],
       },
     });
@@ -67,9 +74,9 @@ async function applyState() {
     rules.push({
       id: SHORTS_RULE_ID,
       priority: 1,
-      action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}#shorts` } },
+      action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}?shorts#\\0` } },
       condition: {
-        regexFilter: "^https?://([a-z0-9-]+\\.)*youtube\\.com/shorts([/?#]|$)",
+        regexFilter: "^https?://([a-z0-9-]+\\.)*youtube\\.com/shorts([/?#]|$).*",
         resourceTypes: ["main_frame"],
       },
     });
@@ -85,7 +92,8 @@ async function applyState() {
   await chrome.action.setIcon({ path: { 16: `icons/${look}-16.png`, 32: `icons/${look}-32.png` } });
   await chrome.action.setTitle({ title: locked ? "Unleash Focus: locked" : "Unleash Focus: open" });
 
-  if (rules.length) await blockOpenTabs(state);
+  // Redirecting the active tab closes the popup, so let its padlock animation play out first.
+  if (rules.length) setTimeout(blockOpenTabs, ANIMATION_MS);
 }
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
