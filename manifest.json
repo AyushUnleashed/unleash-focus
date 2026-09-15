@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Unleash Focus",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Lock distracting sites and YouTube Shorts with one click. Unlock when you're done. Nothing leaves your device.",
   "permissions": ["declarativeNetRequestWithHostAccess", "storage", "activeTab"],
   "host_permissions": ["*://*.youtube.com/*"],
