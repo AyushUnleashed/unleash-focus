@@ -1,4 +1,4 @@
-# Unleash Focus — Privacy Policy
+# Unleash Focus Privacy Policy
 
 _Effective 11 September 2026_
 

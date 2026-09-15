@@ -1,46 +1,79 @@
 # Unleash Focus
 
-A Chrome extension that locks and unlocks a list of distracting sites — and YouTube Shorts — with one click.
+Lock distracting sites and YouTube Shorts with one click. Unlock when you're done. Nothing leaves your device.
 
-Click the padlock to lock: the shackle drops shut with a clunk and every site on your list is blocked, including subdomains and embeds. Click it again to unlock. The toolbar icon shows the current state — brass and closed when locked, grey and open when not.
+![Lock distractions in one click](store/promo-marquee-1400x560.png)
 
-## Install (development)
+## What it does
 
-1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose this folder.
-3. Pin Unleash Focus from the puzzle-piece menu.
-4. Optional: in the extension's **Details**, turn on **Allow in Incognito** so blocked sites don't open in incognito windows.
+Put the sites that pull you away on a list. Click the padlock and they're blocked until you click it again. No schedules and no timers: lock when you start focusing, unlock when you're done.
 
-After changing the code, click the reload arrow on the extension's card.
+- One click locks and unlocks your whole list.
+- Blocks whole sites, including addresses like m.facebook.com or old.reddit.com.
+- Tabs already open on a blocked site switch to the locked page when you lock, and go back to where they were when you unlock.
+- YouTube Shorts switch: blocks Shorts and hides Shorts shelves, while the rest of YouTube stays open.
+- No sneaking out mid-focus: you can't remove sites or turn off the Shorts switch while locked.
+- Keyboard shortcut: Alt+Shift+L (Option+Shift+L on Mac).
+- The padlock snaps shut with a clunk. You can mute it.
 
-## Use
+<p align="center">
+  <img src="store/screenshot-1-lock.png" width="49%" alt="The popup while locked, with x.com, instagram.com and reddit.com on the list">
+  <img src="store/screenshot-2-state.png" width="49%" alt="The popup in its open and locked states, side by side">
+</p>
+<p align="center">
+  <img src="store/screenshot-3-locked-page.png" width="49%" alt="The locked page: x.com is locked while you focus">
+  <img src="store/screenshot-4-shorts.png" width="49%" alt="YouTube Shorts are locked while the rest of YouTube stays open">
+</p>
+<p align="center">
+  <img src="store/screenshot-5-private.png" width="49%" alt="The popup asking for access to a newly added site">
+</p>
 
-- Add sites in the popup (or "Add <current site>"). `x.com` and `instagram.com` are there on first install.
-- Chrome asks for access to each site when you add it (or when you first lock). A site without access shows **Allow access** and isn't blocked until you allow it.
-- Click the lock, or press **Option+Shift+L** (Alt+Shift+L on Windows/Linux). Change the shortcut at `chrome://extensions/shortcuts`.
-- While locked you can add sites but not remove them — unlock first.
-- "Mute sound" in the popup footer turns the lock sounds off.
+## Install
+
+Install it from the Chrome Web Store once it's published, or load it yourself:
+
+1. Download or clone this repository.
+2. Open `chrome://extensions` and turn on **Developer mode**.
+3. Click **Load unpacked** and choose this folder.
+4. Pin Unleash Focus from the puzzle-piece menu in the toolbar.
+
+To block sites in incognito windows too, open the extension's details in `chrome://extensions` and turn on **Allow in Incognito**.
+
+## How to use
+
+1. Click the padlock in the toolbar. x.com and instagram.com are on the list to start with.
+2. Add a site by typing its address, or click "Add <site>" to add the one you're on.
+3. Chrome asks for access to each site the first time. A site without access shows **Allow access** and isn't blocked until you allow it.
+4. Click the padlock to lock. Click it again to unlock. The toolbar icon shows which state you're in: brass and closed when locked, grey and open when not.
+
+While locked you can add sites but not remove them. Unlock first. You can change the keyboard shortcut at `chrome://extensions/shortcuts`.
 
 ## YouTube Shorts
 
-The **YouTube Shorts** switch (on by default) blocks Shorts without blocking YouTube, so tutorials and long videos stay available. While locked:
+The **YouTube Shorts** switch is on by default. While locked, Shorts links go to the locked page and Shorts shelves disappear from the home page, search results, channels and the sidebar. Everything else on YouTube works as usual.
 
-- `youtube.com/shorts/…` redirects to the locked page, including Shorts opened from inside YouTube.
-- `shorts.css` hides Shorts shelves on home, search, channel and watch pages, the channel Shorts tab, and the Shorts sidebar entry.
+YouTube changes its page layout from time to time. If Shorts shelves come back, the selectors in `shorts.css` need updating.
 
-Like the site list, the switch can't be turned off while locked. YouTube renames its elements from time to time; if Shorts shelves reappear, the selectors in `shorts.css` need updating.
+## Privacy
 
-## How blocking works
+No account, no tracking, no ads, no servers. Your list and settings are stored only on your device. Chrome asks for access one site at a time, only for sites you add. Read the full [privacy policy](PRIVACY.md).
 
-- Permissions are minimal: `declarativeNetRequestWithHostAccess` (no install warning), `storage`, `activeTab`, fixed access to youtube.com, and optional access to other sites requested one site at a time.
-- A `declarativeNetRequest` rule redirects requests to listed (and allowed) domains to `blocked.html`.
-- Sites with a service worker (e.g. x.com) can load from cache without a network request, so `background.js` also watches tab URLs and redirects any tab that lands on a listed site.
-- Locking also redirects tabs that are already open on listed sites; unlocking sends them back to the page they were on.
+## For developers
 
-Everything is stored locally in `chrome.storage`; nothing is sent anywhere. See [PRIVACY.md](PRIVACY.md). Sounds are synthesized with Web Audio (`sounds.js`). The Archivo font is bundled under the SIL Open Font License (`fonts/OFL.txt`).
+Plain JavaScript, Manifest V3, no build step. After changing the code, click the reload arrow on the extension's card in `chrome://extensions`.
 
-## Publishing
+How blocking works:
 
-- `scripts/package.sh` builds `dist/unleash-focus-<version>.zip` from the last commit, leaving out docs, scripts and store assets.
-- `store/` holds the Chrome Web Store listing copy, privacy answers, icon, screenshots and promo tiles.
+- A `declarativeNetRequest` rule redirects requests to listed sites, and to `youtube.com/shorts`, to `blocked.html` while locked. The original address travels along in the URL so the page can go back to it on unlock.
+- Some sites (x.com, for example) open pages from cache without a network request, and YouTube opens Shorts without a page load. `background.js` also watches tab addresses and redirects any tab that lands on a blocked page.
+- Locking redirects tabs that are already open on listed sites, after a short pause so the popup's padlock animation can finish. Unlocking sends them back.
+- Permissions are kept small: `declarativeNetRequestWithHostAccess`, `storage`, `activeTab`, fixed access to youtube.com, and optional access to other sites requested one at a time.
+
+Sounds are made with Web Audio in `sounds.js`, so there are no audio files. The Archivo font is bundled under the SIL Open Font License (`fonts/OFL.txt`).
+
+## Releasing
+
 - Bump `version` in `manifest.json` for every store update.
+- `scripts/package.sh` builds `dist/unleash-focus-<version>.zip` from the last commit, leaving out docs, scripts and store assets.
+- Publish a [GitHub release](https://github.com/AyushUnleashed/unleash-focus/releases) with the zip attached and a short list of what changed.
+- `store/` holds the Chrome Web Store listing text, screenshots and promo images.
