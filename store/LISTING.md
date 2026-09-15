@@ -1,4 +1,4 @@
-# Chrome Web Store listing — Unleash Focus
+# Chrome Web Store listing for Unleash Focus
 
 Everything to paste into the developer dashboard, tab by tab. Images are in this folder; regenerate them with `store/render.sh`. Build the upload with `scripts/package.sh`.
 
@@ -68,19 +68,19 @@ Unleash Focus blocks a list of websites the user chooses, and optionally YouTube
 
 **Permission justifications:**
 
-- **declarativeNetRequestWithHostAccess** — Redirects page requests for sites on the user's block list, and youtube.com/shorts pages, to the extension's own "locked" page while the user has it locked. Rules only act on hosts the user has granted access to.
-- **storage** — Saves the user's block list, lock state and settings locally on the device.
-- **activeTab** — When the user opens the popup, reads the current tab's address to offer "Add <site>", so they can add the site they're on to the block list with one click.
-- **Host permission (\*://\*.youtube.com/\*)** — While locked, blocks youtube.com/shorts pages and uses a content script to hide Shorts shelves and links. The rest of YouTube is not affected, and page content is not read.
-- **Optional host permissions (\*://\*/\*)** — Requested one site at a time, only when the user adds that site to their block list, so the extension can redirect it to the locked page. Never requested for sites the user didn't add, and released when the user removes a site.
+- **declarativeNetRequestWithHostAccess**: Redirects page requests for sites on the user's block list, and youtube.com/shorts pages, to the extension's own "locked" page while the user has it locked. Rules only act on hosts the user has granted access to.
+- **storage**: Saves the user's block list, lock state and settings locally on the device.
+- **activeTab**: When the user opens the popup, reads the current tab's address to offer "Add <site>", so they can add the site they're on to the block list with one click.
+- **Host permission (\*://\*.youtube.com/\*)**: While locked, blocks youtube.com/shorts pages and uses a content script to hide Shorts shelves and links. The rest of YouTube is not affected, and page content is not read.
+- **Optional host permissions (\*://\*/\*)**: Requested one site at a time, only when the user adds that site to their block list, so the extension can redirect it to the locked page. Never requested for sites the user didn't add, and released when the user removes a site.
 
 **Remote code:** No, I am not using remote code.
 
-**Data usage — collected data types:**
-- ☑ **Web history** — the extension reads the addresses of pages the user opens on listed sites and on youtube.com, on the device, to decide whether to block them. Addresses are not stored, logged or transmitted.
+**Data usage, collected data types:**
+- ☑ **Web history**: the extension reads the addresses of pages the user opens on listed sites and on youtube.com, on the device, to decide whether to block them. Addresses are not stored, logged or transmitted.
 - ☐ Everything else (personally identifiable information, health, financial, authentication, personal communications, location, user activity, website content).
 
-**Certifications:** check all three —
+**Certifications:** check all three:
 - I do not sell or transfer user data to third parties, outside of the approved use cases.
 - I do not use or transfer user data for purposes that are unrelated to my item's single purpose.
 - I do not use or transfer user data to determine creditworthiness or for lending purposes.
@@ -93,8 +93,8 @@ Unleash Focus blocks a list of websites the user chooses, and optionally YouTube
 No account or login is needed.
 1. Click the Unleash Focus padlock in the toolbar. x.com and instagram.com are on the list by default.
 2. Click the padlock to lock. Chrome asks for access to those sites; allow it.
-3. Open https://x.com — it redirects to the extension's "x.com is locked" page.
-4. Open any youtube.com/shorts/ link — it redirects to "YouTube Shorts are locked"; regular YouTube videos still play.
+3. Open https://x.com. It redirects to the extension's "x.com is locked" page.
+4. Open any youtube.com/shorts/ link. It redirects to "YouTube Shorts are locked"; regular YouTube videos still play.
 5. Click the padlock again to unlock; the sites open normally.
 ```
 
