@@ -10,8 +10,8 @@ Everything to paste into the developer dashboard, tab by tab. Images are in this
 
 **Name** (from the manifest): Unleash Focus
 
-**Summary** (from the manifest, 110/132 characters):
-Lock distracting sites and YouTube Shorts with one click. Unlock when you're done. Nothing leaves your device.
+**Summary** (from the manifest, 127/132 characters):
+Lock distracting sites, YouTube Shorts and Instagram Reels with one click. Unlock when you're done. Nothing leaves your device.
 
 **Description:**
 
@@ -26,14 +26,15 @@ Features
 • Blocks whole sites, including subdomains like m.facebook.com or old.reddit.com.
 • Tabs already open on a blocked site switch to the locked page when you lock, and go back to where they were when you unlock.
 • YouTube Shorts switch: blocks Shorts and hides Shorts shelves while the rest of YouTube stays open for tutorials and long videos.
-• No sneaking out mid-focus: sites can't be removed and Shorts can't be switched off while locked.
+• Instagram Reels switch: blocks Reels and hides videos in your feed and Explore, while photos, stories and messages stay open.
+• No sneaking out mid-focus: sites can't be removed and Shorts and Reels can't be switched off while locked.
 • Keyboard shortcut: Alt+Shift+L (Option+Shift+L on Mac).
 • Sounds can be muted.
 
 Privacy
 • No account, no tracking, no ads, no servers.
 • Your list and settings are stored only on your device.
-• Chrome asks for access one site at a time, only for sites you add.
+• Chrome asks for access one site at a time, only for sites you add, and for instagram.com if you turn on the Reels switch.
 • Open source: github.com/AyushUnleashed/unleash-focus
 
 Tip: to block sites in incognito windows too, open the extension's details in chrome://extensions and turn on "Allow in Incognito".
@@ -64,20 +65,21 @@ Tip: to block sites in incognito windows too, open the extension's details in ch
 ## Privacy practices tab
 
 **Single purpose:**
-Unleash Focus blocks a list of websites the user chooses, and optionally YouTube Shorts, while the user has it locked, and unblocks them when the user unlocks it.
+Unleash Focus blocks a list of websites the user chooses, and optionally YouTube Shorts and Instagram Reels, while the user has it locked, and unblocks them when the user unlocks it.
 
 **Permission justifications:**
 
-- **declarativeNetRequestWithHostAccess**: Redirects page requests for sites on the user's block list, and youtube.com/shorts pages, to the extension's own "locked" page while the user has it locked. Rules only act on hosts the user has granted access to.
+- **declarativeNetRequestWithHostAccess**: Redirects page requests for sites on the user's block list, and youtube.com/shorts and instagram.com/reels pages, to the extension's own "locked" page while the user has it locked. Rules only act on hosts the user has granted access to.
 - **storage**: Saves the user's block list, lock state and settings locally on the device.
+- **scripting**: Only while the Instagram Reels switch is on and the user has allowed access to instagram.com, registers a content script on instagram.com that hides Reels and feed videos while locked. Not used on any other site.
 - **activeTab**: When the user opens the popup, reads the current tab's address to offer "Add <site>", so they can add the site they're on to the block list with one click.
 - **Host permission (\*://\*.youtube.com/\*)**: While locked, blocks youtube.com/shorts pages and uses a content script to hide Shorts shelves and links. The rest of YouTube is not affected, and page content is not read.
-- **Optional host permissions (\*://\*/\*)**: Requested one site at a time, only when the user adds that site to their block list, so the extension can redirect it to the locked page. Never requested for sites the user didn't add, and released when the user removes a site.
+- **Optional host permissions (\*://\*/\*)**: Requested one site at a time, only when the user adds that site to their block list, so the extension can redirect it to the locked page. instagram.com is also requested while the Instagram Reels switch is on (it is on by default), when the user locks, to redirect Reels pages and hide Reels in the feed. Never requested for any other site, and released when the user removes a site or turns the Reels switch off.
 
 **Remote code:** No, I am not using remote code.
 
 **Data usage, collected data types:**
-- ☑ **Web history**: the extension reads the addresses of pages the user opens on listed sites and on youtube.com, on the device, to decide whether to block them. Addresses are not stored, logged or transmitted.
+- ☑ **Web history**: the extension reads the addresses of pages the user opens on listed sites, on youtube.com, and on instagram.com if the Reels switch is on, on the device, to decide whether to block them. Addresses are not stored, logged or transmitted.
 - ☐ Everything else (personally identifiable information, health, financial, authentication, personal communications, location, user activity, website content).
 
 **Certifications:** check all three:
@@ -91,11 +93,12 @@ Unleash Focus blocks a list of websites the user chooses, and optionally YouTube
 
 ```
 No account or login is needed.
-1. Click the Unleash Focus padlock in the toolbar. x.com and instagram.com are on the list by default.
-2. Click the padlock to lock. Chrome asks for access to those sites; allow it.
+1. Click the Unleash Focus padlock in the toolbar. x.com is on the list, and the YouTube Shorts and Instagram Reels switches are on, by default.
+2. Click the padlock to lock. Chrome asks for access to x.com and instagram.com; allow it.
 3. Open https://x.com. It redirects to the extension's "x.com is locked" page.
 4. Open any youtube.com/shorts/ link. It redirects to "YouTube Shorts are locked"; regular YouTube videos still play.
-5. Click the padlock again to unlock; the sites open normally.
+5. Open https://www.instagram.com/reels/. It redirects to "Instagram Reels are locked"; https://www.instagram.com/ still opens, without videos in the feed.
+6. Click the padlock again to unlock; the sites open normally.
 ```
 
 ## Distribution tab
