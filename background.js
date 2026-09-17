@@ -1,5 +1,8 @@
 const SITES_RULE_ID = 1;
 const SHORTS_RULE_ID = 2;
+const REELS_RULE_ID = 3;
+// Instagram Reels are blocked with the same access the popup asks for when instagram.com is on the list.
+const REELS_SITE = "instagram.com";
 const DEFAULT_SITES = ["x.com", "instagram.com"];
 const BLOCKED_URL = chrome.runtime.getURL("blocked.html");
 // Long enough for the popup's padlock animation and sound (popup.html, sounds.js) to finish.
@@ -9,18 +12,21 @@ const ANIMATION_MS = 700;
 const originFor = (site) => `*://*.${site}/*`;
 
 async function getState() {
-  const { sites = [], locked = false, blockShorts = true } = await chrome.storage.local.get([
-    "sites",
-    "locked",
-    "blockShorts",
-  ]);
+  const {
+    sites = [],
+    locked = false,
+    blockShorts = true,
+    blockReels = false,
+  } = await chrome.storage.local.get(["sites", "locked", "blockShorts", "blockReels"]);
   // Access is requested per site from the popup; only sites the user allowed can be blocked.
-  const allowed = await Promise.all(sites.map((site) => chrome.permissions.contains({ origins: [originFor(site)] })));
-  return { sites: sites.filter((_, i) => allowed[i]), locked, blockShorts };
+  const allowed = await Promise.all(
+    [...sites, REELS_SITE].map((site) => chrome.permissions.contains({ origins: [originFor(site)] }))
+  );
+  return { sites: sites.filter((_, i) => allowed[i]), locked, blockShorts, blockReels: blockReels && allowed.at(-1) };
 }
 
-// What a URL is blocked as while locked: the site's hostname, "shorts", or null if it's allowed.
-function blockedAs(url, { sites, blockShorts }) {
+// What a URL is blocked as while locked: the site's hostname, "shorts", "reels", or null if it's allowed.
+function blockedAs(url, { sites, blockShorts, blockReels }) {
   let parsed;
   try {
     parsed = new URL(url);
@@ -29,9 +35,11 @@ function blockedAs(url, { sites, blockShorts }) {
   }
   if (!parsed.protocol.startsWith("http")) return null;
   const host = parsed.hostname;
-  if (sites.some((site) => host === site || host.endsWith("." + site))) return host;
-  const onYouTube = host === "youtube.com" || host.endsWith(".youtube.com");
-  if (blockShorts && onYouTube && /^\/shorts(\/|$)/.test(parsed.pathname)) return "shorts";
+  const isOn = (site) => host === site || host.endsWith("." + site);
+  if (sites.some(isOn)) return host;
+  if (blockShorts && isOn("youtube.com") && /^\/shorts(\/|$)/.test(parsed.pathname)) return "shorts";
+  // /reels/ is the Reels feed, /reel/<id> a single reel.
+  if (blockReels && isOn(REELS_SITE) && /^\/reels?(\/|$)/.test(parsed.pathname)) return "reels";
   return null;
 }
 
@@ -52,13 +60,14 @@ async function blockOpenTabs() {
 
 async function applyState() {
   const state = await getState();
-  const { sites, locked, blockShorts } = state;
+  const { sites, locked, blockShorts, blockReels } = state;
   const rules = [];
 
   if (locked && sites.length) {
     rules.push({
       id: SITES_RULE_ID,
-      priority: 1,
+      // Wins over the Shorts and Reels rules, so the locked page names the whole site.
+      priority: 2,
       // \1 is the hostname, \0 the whole URL: blocked.html?www.instagram.com#https://www.instagram.com/reels/abc
       // (Chrome replaces only the matched part of the URL, so the regex has to match all of it.)
       action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}?\\1#\\0` } },
@@ -81,9 +90,20 @@ async function applyState() {
       },
     });
   }
+  if (locked && blockReels) {
+    rules.push({
+      id: REELS_RULE_ID,
+      priority: 1,
+      action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}?reels#\\0` } },
+      condition: {
+        regexFilter: "^https?://([a-z0-9-]+\\.)*instagram\\.com/reels?([/?#]|$).*",
+        resourceTypes: ["main_frame"],
+      },
+    });
+  }
 
   await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [SITES_RULE_ID, SHORTS_RULE_ID],
+    removeRuleIds: [SITES_RULE_ID, SHORTS_RULE_ID, REELS_RULE_ID],
     addRules: rules,
   });
 
@@ -110,7 +130,7 @@ chrome.permissions.onAdded.addListener(applyState);
 chrome.permissions.onRemoved.addListener(applyState);
 
 // Sites with a service worker (x.com) load pages from cache without a network request,
-// and YouTube opens Shorts without a page load, so the rules never see either.
+// and YouTube and Instagram open Shorts and Reels without a page load, so the rules never see them.
 // Catch those tabs as their URL changes instead.
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
   if (!changeInfo.url?.startsWith("http")) return;
@@ -119,7 +139,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && (changes.sites || changes.locked || changes.blockShorts)) applyState();
+  if (area === "local" && (changes.sites || changes.locked || changes.blockShorts || changes.blockReels)) applyState();
 });
 
 chrome.commands.onCommand.addListener(async (command) => {

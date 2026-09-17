@@ -207,7 +207,7 @@
         color: var(--muted);
       }
 
-      /* YouTube Shorts: blocked with the list, but only Shorts, not all of YouTube. */
+      /* YouTube Shorts and Instagram Reels: blocked with the list, but not the rest of the site. */
       .extra {
         display: flex;
         align-items: center;
@@ -218,6 +218,7 @@
         border-bottom: 1px solid var(--rule);
         cursor: pointer;
       }
+      .extra + .extra { border-top: 0; }
       .extra.is-locked { cursor: default; }
       .extra-name { font-size: 15px; font-weight: 500; }
       .extra-note { display: block; color: var(--muted); font-size: 12px; }
@@ -345,6 +346,13 @@
         <span class="extra-note">Blocks Shorts only. The rest of YouTube stays open.</span>
       </span>
       <input type="checkbox" class="switch" id="shortsToggle" role="switch" />
+    </label>
+    <label class="extra" id="reelsRow">
+      <span>
+        <span class="extra-name">Instagram Reels</span>
+        <span class="extra-note">Blocks Reels only. The rest of Instagram stays open.</span>
+      </span>
+      <input type="checkbox" class="switch" id="reelsToggle" role="switch" />
     </label>
 
     <form id="addForm">

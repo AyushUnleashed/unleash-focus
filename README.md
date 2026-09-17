@@ -1,6 +1,6 @@
 # Unleash Focus
 
-Lock distracting sites and YouTube Shorts with one click. Unlock when you're done. Nothing leaves your device.
+Lock distracting sites, YouTube Shorts and Instagram Reels with one click. Unlock when you're done. Nothing leaves your device.
 
 ![Lock distractions in one click](store/promo-marquee-1400x560.png)
 
@@ -12,7 +12,8 @@ Put the sites that pull you away on a list. Click the padlock and they're blocke
 - Blocks whole sites, including addresses like m.facebook.com or old.reddit.com.
 - Tabs already open on a blocked site switch to the locked page when you lock, and go back to where they were when you unlock.
 - YouTube Shorts switch: blocks Shorts and hides Shorts shelves, while the rest of YouTube stays open.
-- No sneaking out mid-focus: you can't remove sites or turn off the Shorts switch while locked.
+- Instagram Reels switch: blocks Reels, while the rest of Instagram stays open.
+- No sneaking out mid-focus: you can't remove sites or turn off the Shorts and Reels switches while locked.
 - Keyboard shortcut: Alt+Shift+L (Option+Shift+L on Mac).
 - The padlock snaps shut with a clunk. You can mute it.
 
@@ -54,9 +55,15 @@ The **YouTube Shorts** switch is on by default. While locked, Shorts links go to
 
 YouTube changes its page layout from time to time. If Shorts shelves come back, the selectors in `shorts.css` need updating.
 
+## Instagram Reels
+
+The **Instagram Reels** switch is off to start with. Turn it on and Chrome asks for access to instagram.com. While locked, the Reels tab and any reel you open go to the locked page. Your feed, stories, profiles and messages still work.
+
+You don't need instagram.com on your list for this. If it is on your list, all of Instagram is blocked anyway.
+
 ## Privacy
 
-No account, no tracking, no ads, no servers. Your list and settings are stored only on your device. Chrome asks for access one site at a time, only for sites you add. Read the full [privacy policy](PRIVACY.md).
+No account, no tracking, no ads, no servers. Your list and settings are stored only on your device. Chrome asks for access one site at a time, only for sites you add, and for instagram.com if you turn on the Reels switch. Read the full [privacy policy](PRIVACY.md).
 
 ## For developers
 
@@ -64,10 +71,10 @@ Plain JavaScript, Manifest V3, no build step. After changing the code, click the
 
 How blocking works:
 
-- A `declarativeNetRequest` rule redirects requests to listed sites, and to `youtube.com/shorts`, to `blocked.html` while locked. The original address travels along in the URL so the page can go back to it on unlock.
-- Some sites (x.com, for example) open pages from cache without a network request, and YouTube opens Shorts without a page load. `background.js` also watches tab addresses and redirects any tab that lands on a blocked page.
+- A `declarativeNetRequest` rule redirects requests to listed sites, and to `youtube.com/shorts` and `instagram.com/reel(s)`, to `blocked.html` while locked. The original address travels along in the URL so the page can go back to it on unlock.
+- Some sites (x.com, for example) open pages from cache without a network request, and YouTube and Instagram open Shorts and Reels without a page load. `background.js` also watches tab addresses and redirects any tab that lands on a blocked page.
 - Locking redirects tabs that are already open on listed sites, after a short pause so the popup's padlock animation can finish. Unlocking sends them back.
-- Permissions are kept small: `declarativeNetRequestWithHostAccess`, `storage`, `activeTab`, fixed access to youtube.com, and optional access to other sites requested one at a time.
+- Permissions are kept small: `declarativeNetRequestWithHostAccess`, `storage`, `activeTab`, fixed access to youtube.com, and optional access to other sites requested one at a time. The Reels switch uses the same optional access to instagram.com.
 
 Sounds are made with Web Audio in `sounds.js`, so there are no audio files. The Archivo font is bundled under the SIL Open Font License (`fonts/OFL.txt`).
 

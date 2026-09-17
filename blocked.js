@@ -2,14 +2,19 @@ const MIN_SIZE = 28;
 // Long enough for the popup's padlock animation and sound (popup.html, sounds.js) to finish.
 const ANIMATION_MS = 700;
 const heading = document.getElementById("site");
-// blocked.html?<hostname or "shorts">#<the URL that was blocked>
+// blocked.html?<hostname, "shorts" or "reels">#<the URL that was blocked>
 const host = location.search.slice(1).replace(/^www\./, "");
 const from = location.hash.slice(1);
+// What's locked, and the site that stays open around it.
+const part = new Map([
+  ["shorts", ["YouTube Shorts", "YouTube"]],
+  ["reels", ["Instagram Reels", "Instagram"]],
+]).get(host);
 
-if (host === "shorts") {
-  heading.textContent = "YouTube Shorts";
-  document.querySelector(".lead").textContent = "are locked while you focus. The rest of YouTube is open.";
-  document.title = "YouTube Shorts are locked";
+if (part) {
+  heading.textContent = part[0];
+  document.querySelector(".lead").textContent = `are locked while you focus. The rest of ${part[1]} is open.`;
+  document.title = `${part[0]} are locked`;
 } else if (host) {
   heading.textContent = host;
   document.title = `${host} is locked`;
