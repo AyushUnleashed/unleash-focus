@@ -1,5 +1,5 @@
 /* Hides Shorts on YouTube while Unleash Focus is locked with YouTube Shorts on.
-   shorts.js sets the attribute; the rest of YouTube is untouched. */
+   hide.js sets the attribute; the rest of YouTube is untouched. */
 html[data-unleash-focus-shorts]
   :is(
     /* home feed shelf */

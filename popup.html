@@ -219,9 +219,25 @@
         cursor: pointer;
       }
       .extra + .extra { border-top: 0; }
+
+      .state-lock {
+        display: flex;
+        flex: none;
+        justify-content: center;
+        width: 28px;
+      }
+      .state-lock svg { width: 17px; height: auto; overflow: visible; }
+      .state-lock path { fill: none; stroke: var(--shackle); stroke-width: 12; }
+      .state-lock .body { fill: var(--lock-body); }
+      .state-lock circle,
+      .state-lock .slot { fill: var(--keyhole); }
+      /* Not blocked: a dim, open padlock. */
+      .state-lock.is-open { opacity: 0.6; }
+      .state-lock.is-open path { stroke: var(--muted); }
+      .state-lock.is-open .body { fill: var(--muted); }
       .extra.is-locked { cursor: default; }
       .extra-name { font-size: 15px; font-weight: 500; }
-      .extra-note { display: block; color: var(--muted); font-size: 12px; }
+      .extra-note { display: block; color: var(--muted); font-size: 12px; text-wrap: pretty; }
 
       .switch {
         appearance: none;
@@ -350,7 +366,7 @@
     <label class="extra" id="reelsRow">
       <span>
         <span class="extra-name">Instagram Reels</span>
-        <span class="extra-note">Blocks Reels only. The rest of Instagram stays open.</span>
+        <span class="extra-note">Blocks Reels and feed videos. Photos, stories and messages stay open.</span>
       </span>
       <input type="checkbox" class="switch" id="reelsToggle" role="switch" />
     </label>

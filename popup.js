@@ -14,7 +14,7 @@ const errorEl = document.getElementById("error");
 const hintEl = document.getElementById("hint");
 const soundBtn = document.getElementById("sound");
 
-let state = { sites: [], locked: false, blockShorts: true, blockReels: false, sound: true };
+let state = { sites: [], locked: false, blockShorts: true, blockReels: true, sound: true };
 let allowed = new Set(); // sites the user has granted access to, plus REELS_SITE
 let shownLocked = null; // lock state currently on screen; null until first render
 let currentSite = null;
@@ -90,6 +90,25 @@ function animateLock(locked) {
   if (state.sound) LockSounds.play(locked ? "lock" : "unlock");
 }
 
+// While locked, a small padlock stands in for each switch and remove button:
+// closed if it's blocked, open if it isn't (switched off, or still waiting for access).
+function lockIcon(blocked, wanted) {
+  const icon = document.createElement("span");
+  const label = blocked ? "Blocked" : wanted ? "Not blocked yet: needs access" : "Not blocked";
+  icon.className = `state-lock ${blocked ? "is-closed" : "is-open"}`;
+  icon.title = label;
+  icon.setAttribute("role", "img");
+  icon.setAttribute("aria-label", label);
+  // The header padlock in miniature; open lifts the shackle and swings it aside the same way.
+  const swing = blocked ? "" : ' transform="translate(0 -18) rotate(-20 38 72)"';
+  icon.innerHTML = `<svg viewBox="0 0 120 140" aria-hidden="true">
+    <path${swing} d="M38 100 V46 a22 22 0 0 1 44 0 V72" />
+    <rect class="body" x="14" y="62" width="92" height="74" rx="16" />
+    <circle cx="60" cy="92" r="8.5" /><rect class="slot" x="56.25" y="95" width="7.5" height="19" rx="2.5" />
+  </svg>`;
+  return icon;
+}
+
 function siteRow(site, locked) {
   const li = document.createElement("li");
   const name = document.createElement("span");
@@ -106,7 +125,9 @@ function siteRow(site, locked) {
     actions.append(access);
   }
   // No removing sites mid-focus; unlock first.
-  if (!locked) {
+  if (locked) {
+    actions.append(lockIcon(allowed.has(site), true));
+  } else {
     const remove = document.createElement("button");
     remove.className = "remove";
     remove.textContent = "×";
@@ -138,14 +159,17 @@ function render() {
   emptyEl.hidden = sites.length > 0;
 
   // Same rule as the list: no switching Shorts or Reels off mid-focus.
-  for (const [row, toggle, on] of [
-    [shortsRow, shortsToggle, blockShorts],
-    [reelsRow, reelsToggle, blockReels],
+  for (const [row, toggle, on, blocked] of [
+    [shortsRow, shortsToggle, blockShorts, blockShorts],
+    [reelsRow, reelsToggle, blockReels, blockReels && allowed.has(REELS_SITE)],
   ]) {
     toggle.checked = on;
     toggle.disabled = locked;
+    toggle.hidden = locked;
     row.classList.toggle("is-locked", locked);
     row.title = locked ? "Unlock to change" : "";
+    row.querySelector(".state-lock")?.remove();
+    if (locked) row.append(lockIcon(blocked, on));
   }
 
   const canAddCurrent = currentSite && !sites.includes(currentSite);
@@ -216,7 +240,7 @@ addCurrentBtn.addEventListener("click", () => {
 Promise.all([
   chrome.storage.local.get(["sites", "locked", "blockShorts", "blockReels", "sound"]),
   chrome.tabs.query({ active: true, currentWindow: true }),
-]).then(async ([{ sites = [], locked = false, blockShorts = true, blockReels = false, sound = true }, [tab]]) => {
+]).then(async ([{ sites = [], locked = false, blockShorts = true, blockReels = true, sound = true }, [tab]]) => {
   state = { sites, locked, blockShorts, blockReels, sound };
   // activeTab exposes the current tab's URL while the popup is open.
   if (tab?.url?.startsWith("http")) currentSite = normalize(tab.url);
@@ -234,7 +258,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes.sites) state.sites = changes.sites.newValue ?? [];
   if (changes.locked) state.locked = changes.locked.newValue ?? false;
   if (changes.blockShorts) state.blockShorts = changes.blockShorts.newValue ?? true;
-  if (changes.blockReels) state.blockReels = changes.blockReels.newValue ?? false;
+  if (changes.blockReels) state.blockReels = changes.blockReels.newValue ?? true;
   if (changes.sound) state.sound = changes.sound.newValue ?? true;
   refreshAndRender();
 });

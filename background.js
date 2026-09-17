@@ -3,7 +3,15 @@ const SHORTS_RULE_ID = 2;
 const REELS_RULE_ID = 3;
 // Instagram Reels are blocked with the same access the popup asks for when instagram.com is on the list.
 const REELS_SITE = "instagram.com";
-const DEFAULT_SITES = ["x.com", "instagram.com"];
+// Hides Reels in the feed and grids. Registered only while Reels blocking is on and instagram.com is allowed.
+const REELS_SCRIPT = {
+  id: "reels",
+  matches: [`*://*.${REELS_SITE}/*`],
+  css: ["reels.css"],
+  js: ["hide.js"],
+  runAt: "document_start",
+};
+const DEFAULT_SITES = ["x.com"];
 const BLOCKED_URL = chrome.runtime.getURL("blocked.html");
 // Long enough for the popup's padlock animation and sound (popup.html, sounds.js) to finish.
 const ANIMATION_MS = 700;
@@ -16,7 +24,7 @@ async function getState() {
     sites = [],
     locked = false,
     blockShorts = true,
-    blockReels = false,
+    blockReels = true,
   } = await chrome.storage.local.get(["sites", "locked", "blockShorts", "blockReels"]);
   // Access is requested per site from the popup; only sites the user allowed can be blocked.
   const allowed = await Promise.all(
@@ -38,8 +46,8 @@ function blockedAs(url, { sites, blockShorts, blockReels }) {
   const isOn = (site) => host === site || host.endsWith("." + site);
   if (sites.some(isOn)) return host;
   if (blockShorts && isOn("youtube.com") && /^\/shorts(\/|$)/.test(parsed.pathname)) return "shorts";
-  // /reels/ is the Reels feed, /reel/<id> a single reel.
-  if (blockReels && isOn(REELS_SITE) && /^\/reels?(\/|$)/.test(parsed.pathname)) return "reels";
+  // /reels/ is the Reels feed, /<user>/reels/ a profile's Reels, /reel/<id> and /<user>/reel/<id> a single reel.
+  if (blockReels && isOn(REELS_SITE) && /^\/([^/]+\/)?reels?(\/|$)/.test(parsed.pathname)) return "reels";
   return null;
 }
 
@@ -56,6 +64,22 @@ async function blockOpenTabs() {
   if (!state.locked) return;
   const tabs = await chrome.tabs.query({});
   for (const tab of tabs) blockTabIfNeeded(tab.id, tab.url, state);
+}
+
+async function syncReelsScript(blockReels) {
+  const [registered] = await chrome.scripting.getRegisteredContentScripts({ ids: [REELS_SCRIPT.id] });
+  // Overlapping applyState calls can both try to (un)register; the second one's error is harmless.
+  if (!blockReels && registered) {
+    await chrome.scripting.unregisterContentScripts({ ids: [REELS_SCRIPT.id] }).catch(() => {});
+  }
+  if (!blockReels || registered) return;
+  await chrome.scripting.registerContentScripts([REELS_SCRIPT]).catch(() => {});
+  // Registered scripts only reach pages loaded from now on, so also add it to Instagram tabs already open.
+  for (const tab of await chrome.tabs.query({ url: REELS_SCRIPT.matches })) {
+    const target = { tabId: tab.id };
+    chrome.scripting.insertCSS({ target, files: REELS_SCRIPT.css }).catch(() => {});
+    chrome.scripting.executeScript({ target, files: REELS_SCRIPT.js }).catch(() => {});
+  }
 }
 
 async function applyState() {
@@ -96,7 +120,7 @@ async function applyState() {
       priority: 1,
       action: { type: "redirect", redirect: { regexSubstitution: `${BLOCKED_URL}?reels#\\0` } },
       condition: {
-        regexFilter: "^https?://([a-z0-9-]+\\.)*instagram\\.com/reels?([/?#]|$).*",
+        regexFilter: "^https?://([a-z0-9-]+\\.)*instagram\\.com/([^/?#]+/)?reels?([/?#]|$).*",
         resourceTypes: ["main_frame"],
       },
     });
@@ -106,6 +130,7 @@ async function applyState() {
     removeRuleIds: [SITES_RULE_ID, SHORTS_RULE_ID, REELS_RULE_ID],
     addRules: rules,
   });
+  await syncReelsScript(blockReels);
 
   // Toolbar icon mirrors the state: grey open padlock, or brass closed padlock on blue.
   const look = locked ? "locked" : "open";
