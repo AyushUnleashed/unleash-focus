@@ -8,7 +8,7 @@ const REELS_SCRIPT = {
   id: "reels",
   matches: [`*://*.${REELS_SITE}/*`],
   css: ["reels.css"],
-  js: ["hide.js"],
+  js: ["hide.js", "reels.js"],
   runAt: "document_start",
 };
 const DEFAULT_SITES = ["x.com"];
@@ -146,6 +146,8 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
     const { sites } = await chrome.storage.local.get("sites");
     if (!sites) await chrome.storage.local.set({ sites: DEFAULT_SITES, locked: false });
   }
+  // A registration from an older version may list different files; applyState registers the current one.
+  await chrome.scripting.unregisterContentScripts({ ids: [REELS_SCRIPT.id] }).catch(() => {});
   await applyState();
 });
 chrome.runtime.onStartup.addListener(applyState);

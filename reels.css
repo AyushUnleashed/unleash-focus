@@ -1,9 +1,9 @@
 /* Hides Instagram Reels while Unleash Focus is locked with Instagram Reels on.
-   hide.js sets the attribute; photos, stories and messages are untouched. */
+   hide.js flags the page and reels.js marks video posts; photos, stories and messages are untouched. */
 html[data-unleash-focus-reels]
   :is(
     /* home feed: video posts are Reels */
-    article:has(video),
+    article[data-unleash-focus-reel],
     /* Explore (profile grid tiles link to /reel/ and go to the locked page instead) */
     a:has(svg[aria-label="Reel"]),
     /* sidebar link and the Reels tab on profiles */

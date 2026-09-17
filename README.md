@@ -61,7 +61,7 @@ The **Instagram Reels** switch is on to start with. The first time you lock, Chr
 
 You don't need instagram.com on your list for this. If it is on your list, all of Instagram is blocked anyway.
 
-Instagram changes its page layout from time to time. If Reels come back in the feed, the selectors in `reels.css` need updating.
+Instagram changes its page layout from time to time. If Reels come back in the feed, the selectors in `reels.css` and `reels.js` need updating.
 
 ## Privacy
 
@@ -75,7 +75,7 @@ How blocking works:
 
 - A `declarativeNetRequest` rule redirects requests to listed sites, and to `youtube.com/shorts` and Instagram Reels pages, to `blocked.html` while locked. The original address travels along in the URL so the page can go back to it on unlock.
 - Some sites (x.com, for example) open pages from cache without a network request, and YouTube and Instagram open Shorts and Reels without a page load. `background.js` also watches tab addresses and redirects any tab that lands on a blocked page.
-- `hide.js` marks YouTube and Instagram pages while locked, so `shorts.css` and `reels.css` can hide Shorts and Reels. On Instagram it's registered from `background.js`, only once access to instagram.com is allowed.
+- `hide.js` marks YouTube and Instagram pages while locked, so `shorts.css` and `reels.css` can hide Shorts and Reels. On Instagram, `reels.js` also remembers which posts are videos, because Instagram removes a post's video while it's off screen. On Instagram it's registered from `background.js`, only once access to instagram.com is allowed.
 - Locking redirects tabs that are already open on listed sites, after a short pause so the popup's padlock animation can finish. Unlocking sends them back.
 - Permissions are kept small: `declarativeNetRequestWithHostAccess`, `storage`, `activeTab`, `scripting`, fixed access to youtube.com, and optional access to other sites requested one at a time. The Reels switch uses the same optional access to instagram.com.
 
